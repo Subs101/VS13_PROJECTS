@@ -10,12 +10,13 @@ namespace
 
 Player::Player()
 {
-	playerName_ = NULL;
+	playerName_;
 	numCoins_ = 0;
 	colorCards_ = std::vector<int> (ORANGE + 1, 0);
 	hand = std::vector<LakeTile>( 0,LakeTile());
 	points_ = 0;
 	orientation = 0;
+	AI_flag = false;
 
 }
 
@@ -210,4 +211,45 @@ int Player::removeTile(int handPos)
 	default: break;
 	}
 
+}
+int Player::takeTurn(Game& game)
+{
+	if (!AI_flag)
+	{
+		while (game.actionMenu()>0);
+		game.endTurn();
+		return 0;
+	}
+	else
+	{
+		/*PLAYER AI*/
+		//if 2 coins make exchange to yield buy
+		//if buy criteria met do that..
+		//placetile with most synergies
+		game.endTurn();
+		return 0;
+	}
+	
+}
+
+int Player::setName(std::string name)
+{
+	playerName_ = name;
+	return 0;
+}
+
+std::string Player::getName()
+{
+	return playerName_;
+
+}
+
+int Player::setAI(bool flag)
+{
+	AI_flag = flag;
+	return 0;
+}
+bool Player::getAI()
+{
+	return AI_flag;
 }

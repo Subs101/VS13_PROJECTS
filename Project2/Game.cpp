@@ -21,20 +21,42 @@ namespace
 Game::Game(int players)
 {
 	numPlayers = players;
+	//initialize game
+	//shuffle game tiles/ deal 3 game tiles to each player
+	initGame();
+	
+	//get player name and orientation
+	//set other players to AI
+	configGame();
+	//welcome screen
 
-	while (true)
-	{
-		//welcome screen
-		
-
-		eventLoop();
-
-		//ask if play again
-		//if true with how many player?
-
-	}
+	eventLoop();
 
 	
+	
+
+
+}
+
+int Game::configGame()
+{
+	std::string name;
+
+	std::cout << "Enter player name: ";
+	std::cin >> name;
+	std::cout << "\n";
+
+	//you are player 0!
+	players_[0].setName(name);
+	players_[0].setAI(false);
+
+	for (int i = 1; i < numPlayers; i++)
+	{
+		players_[i].setAI(true);
+	}
+
+
+	return 0;
 
 
 }
@@ -78,38 +100,13 @@ bool Game::isGameOver()
 void Game::eventLoop()
 {
 	
-	//initialize game
-	initGame();
-		//shuffle game tiles/ deal 3 game tiles to each player
-
-
-	//get player names
-
-
-
-	//while loop taking turns until game is over
-		//game is over when no tiles in all players hand
 	while (!isGameOver())
 	{
-		
-		
-		//phase 1 exchange card input
-		//phase 2 buy victory points
-		//phase 3 place tile
 
 		drawGame();
 		showHandCards();
-
-
-		while(actionMenu() > 0);
-		
+		players_[whoseTurn].takeTurn(*this);
 	
-		
-		//phase 4 end turn and draw tile
-		endTurn();
-
-		
-
 	}
 
 	std::cout<<"Player  "<<getWinner()<<" wins\n";

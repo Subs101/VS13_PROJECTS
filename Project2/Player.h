@@ -4,11 +4,15 @@
 #include "Game.h"
 #include <vector>
 struct LakeTile;
+struct Game;
 
 struct Player
 {
 
 	Player();
+
+	int takeTurn(Game& game);
+	
 	int drawTile(std::vector<LakeTile>& lakeTiles_);
 	int handSize();
 	int popHand();
@@ -29,18 +33,25 @@ struct Player
 	int rotateTile(int handPos, int iterations);
 	int drawColorCard(int color,std::vector<int>& deck);
 
+	int setName(std::string name);
+	std::string Player::getName();
+
+	int setAI(bool flag);
+	bool getAI();
+
+
 	LakeTile topHand();
 	LakeTile handTile(int handPos);
 
 private:
 
-	char* playerName_;
+	std::string playerName_;
 	int numCoins_;
 	std::vector<int> colorCards_;
 	int points_;
 	int orientation;
 	std::vector<LakeTile> hand;
-
+	bool AI_flag;
 
 };
 

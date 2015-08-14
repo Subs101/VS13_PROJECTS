@@ -30,6 +30,8 @@ struct Game
 	int initLakeTiles();
 	int initPointStacks();
 
+	int configGame();
+
 
 	int placeTile(int handPos, int row, int col);
 	int getColorText(int color);
