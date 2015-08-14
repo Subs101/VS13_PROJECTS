@@ -63,10 +63,10 @@ LakeTile Player::topHand()
 
 }
 
-LakeTile Player::handPos(int n)
+LakeTile Player::handTile(int handPos)
 {
 
-	return hand[n];
+	return hand[handPos];
 }
 
 int Player::drawColorCard(int color,std::vector<int>& deck)
@@ -81,7 +81,7 @@ int Player::drawColorCard(int color,std::vector<int>& deck)
 	else
 	{
 		std::cout << "No more of " << color << " card\n";
-		return 0;
+		return -1;
 	}
 	
 
@@ -95,7 +95,7 @@ int Player::incCoins()
 
 int Player::decCoins()
 {
-	numCoins_--;
+	numCoins_ = numCoins_ - 2;
 	return 0;
 }
 
@@ -127,4 +127,87 @@ int Player::decColorHand(int color)
 int Player::getPoints()
 {
 	return points_;
+}
+
+int Player::rotateTile(int handPos, int iterations)
+{
+	for (int i = 0; i < iterations; i++)
+	{
+		hand[handPos].rotateTileCW();
+	}
+	return 0;
+}
+
+
+int Player::removeTile(int handPos)
+{
+
+	LakeTile temp1,temp2;
+
+	switch (handSize())
+	{
+	case 1:
+		if (handPos == 0)
+		{
+			popHand();
+			return 0;
+		}
+		else
+		{
+			return -1;
+		}
+
+		break;
+	case 2: 
+		if (handPos == 0)
+		{
+			temp1 = hand[1];
+			popHand();//remove tile 1
+			popHand();//remove tile 0
+			hand.push_back(temp1);//restore tile 1
+		}
+		else if (handPos == 1)
+		{
+			popHand();//remove tile 1
+		}
+		else
+		{
+			return -1;
+		}
+		break;
+
+	case 3:
+		if (handPos == 0)
+		{
+			temp1 = hand[2];
+			temp2 = hand[1];
+			popHand();//remove tile 2
+			popHand();//remove tile 1
+			popHand();//remove tile 0
+
+			hand.push_back(temp2);//restore tile 1
+			hand.push_back(temp1);//restore tile 1
+		}
+		else if (handPos == 1)
+		{
+			temp1 = hand[2];
+
+			popHand();//remove tile 2
+			popHand();//remove tile 1
+
+			hand.push_back(temp1);//restore tile 2
+		}
+		else if (handPos == 2)
+		{
+			popHand();
+		}
+		else
+		{
+			return -1;
+		}
+		
+		break;
+	default: break;
+	}
+
 }

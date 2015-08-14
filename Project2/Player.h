@@ -12,6 +12,7 @@ struct Player
 	int drawTile(std::vector<LakeTile>& lakeTiles_);
 	int handSize();
 	int popHand();
+	int removeTile(int handPos);
 
 	int incCoins();
 	int decCoins();
@@ -25,11 +26,11 @@ struct Player
 	std::vector<int> getColorHand();
 	int getPoints();
 
-
+	int rotateTile(int handPos, int iterations);
 	int drawColorCard(int color,std::vector<int>& deck);
 
 	LakeTile topHand();
-	LakeTile handPos(int n);
+	LakeTile handTile(int handPos);
 
 private:
 

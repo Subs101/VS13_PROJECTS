@@ -8,6 +8,16 @@
 
 struct LakeTile;
 struct Player;
+
+enum
+{
+	fourOfAKind,
+	threePair,
+	sevenUnique,
+
+};
+
+
 struct Game
 {
 	Game(int players);
@@ -19,7 +29,9 @@ struct Game
 	int initGame();
 	int initLakeTiles();
 	int initPointStacks();
-	int placeTile(int row, int col);
+
+
+	int placeTile(int handPos, int row, int col);
 	int getColorText(int color);
 	int endTurn();
 
@@ -30,12 +42,16 @@ struct Game
 	int giveFacing(LakeTile tile);
 
 	int buy(int stack);
+	int exchangeCard(int remColor, int getColor);
+	int getWinner();
 
 	int showHandTiles();
 	int showHandCards();
 
 	int actionMenu();
+
 	int strColorToInt(std::string);
+	int strStackToInt(std::string);
 
 	int shuffleTiles();
 	int rng(int low, int high);

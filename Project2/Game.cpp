@@ -97,6 +97,10 @@ void Game::eventLoop()
 		//phase 2 buy victory points
 		//phase 3 place tile
 
+		drawGame();
+		showHandCards();
+
+
 		while(actionMenu() > 0);
 		
 	
@@ -104,10 +108,13 @@ void Game::eventLoop()
 		//phase 4 end turn and draw tile
 		endTurn();
 
-		drawGame();
-		showHandCards();
+		
 
 	}
+
+	std::cout<<"Player  "<<getWinner()<<" wins\n";
+
+
 
 
 }
@@ -146,47 +153,79 @@ int Game::strColorToInt(std::string s)
 
 int Game::buy(int stack)
 {
-	int color;
+	int color1,color2,color3;
 	std::string strColor1;
-
-
+	std::string strColor2;
+	std::string strColor3;
 
 	switch (stack)
 	{
-	case 1:
+	case fourOfAKind:
 		//4 of a kind
 		std::cout << "Which color are you buying with?\n";
 		std::cin >> strColor1;
 
-		color = strColorToInt(strColor1);
+		color1 = strColorToInt(strColor1);
 
-		players_[whoseTurn].incPoints(pointStacks_[0].back());
-		pointStacks_[0].pop_back();
-
-		if (players_[whoseTurn].getColorHand()[color] < 4)
+		if (players_[whoseTurn].getColorHand()[color1] < 4)
 		{
 			std::cout << "Invalid Buy: Don't have 4 of that color.\n";
 			return -1;
 		}
 
+
+		players_[whoseTurn].incPoints(pointStacks_[fourOfAKind].back());
+		pointStacks_[fourOfAKind].pop_back();
+
 		for (int i = 0; i < 4; i++)
 		{
-			players_[whoseTurn].decColorHand(color);
-			colorDeck_[color]++;
+			players_[whoseTurn].decColorHand(color1);
+			colorDeck_[color1]++;
 		}
 		
 
 		return 0;
 
 		break;
-	case 2:
-
+	case threePair:
 		//2 of 3 color
-		players_[whoseTurn].incPoints(pointStacks_[1].back());
-		pointStacks_[1].pop_back();
+		std::cout << "Which colors are you buying with?\n";
+		std::cin >> strColor1>>strColor2>>strColor3;
+
+		color1 = strColorToInt(strColor1);
+		color2 = strColorToInt(strColor2);
+		color3 = strColorToInt(strColor3);
+
+		if (players_[whoseTurn].getColorHand()[color1] < 2 || 
+			players_[whoseTurn].getColorHand()[color2] < 2 ||
+			players_[whoseTurn].getColorHand()[color3] < 2)
+		{
+			std::cout << "Invalid Buy: Don't have 2 of one or more color.\n";
+			return -1;
+		}
+
+
+		for (int i = 0; i < 2; i++)
+		{
+			//dec each color 2 times
+			players_[whoseTurn].decColorHand(color1);
+			players_[whoseTurn].decColorHand(color2);
+			players_[whoseTurn].decColorHand(color3);
+
+			//inc each color of the 3
+			colorDeck_[color1]++;
+			colorDeck_[color2]++;
+			colorDeck_[color3]++;
+		}
+
+
+
+		players_[whoseTurn].incPoints(pointStacks_[threePair].back());
+		pointStacks_[threePair].pop_back();
 		return 0;
+
 		break;
-	case 3:
+	case sevenUnique:
 		//1 of each color
 		for (int i = 0; i < 7; i++)
 		{
@@ -207,10 +246,11 @@ int Game::buy(int stack)
 		}
 
 
-			players_[whoseTurn].incPoints(pointStacks_[2].back());
-			pointStacks_[2].pop_back();
+			players_[whoseTurn].incPoints(pointStacks_[sevenUnique].back());
+			pointStacks_[sevenUnique].pop_back();
 			return 0;
 			break;
+
 		default:break;
 		}
 	
@@ -220,10 +260,36 @@ int Game::buy(int stack)
 	return 0;
 }
 
+int Game::strStackToInt(std::string stack)
+{
+
+	if (stack == "fourOfAKind" ||
+		stack == "fourofakind")
+	{
+		return fourOfAKind;
+	}
+	else if (stack == "threePair" ||
+		stack == " threepair")
+	{
+		return threePair;
+	}
+	else if (stack == "sevenUnique" ||
+		stack == "sevenunique")
+	{
+		return sevenUnique;
+	}
+	else
+	{
+		return -1;
+	}
+
+}
+
+
 int Game::actionMenu()
 {
 	std::string command;
-	int choice1, choice2;
+	int choice1, choice2,choice3;
 	std::string schoice1, schoice2;
 
 	std::cout << "Give command\n";
@@ -232,20 +298,29 @@ int Game::actionMenu()
 
 	if (command == "buy")
 	{
-		do
-		{
+		
 
-			while (!(std::cin >> choice1))
-			{
+			while (!(std::cin >> schoice1))
+			{ 
 				std::cin.clear();
 				std::cin.ignore();
 			}
 
-		} while (buy(choice1) < 0);
+			choice1 = strStackToInt(schoice1);
+
+			buy(choice1);
 
 		return 1;
 
 
+
+	}
+	else if (command == "rotate")
+	{
+		std::cin >> choice1 >> choice2;
+		players_[whoseTurn].rotateTile(choice1, choice2);
+		std::cout << "rotated tile in hand position " << choice1 << "\nclockwise by " << choice2 << " times\n";
+		return 1;
 
 	}
 	else if (command == "show")
@@ -292,19 +367,22 @@ int Game::actionMenu()
 	{
 
 
-		do
+		while (!(std::cin >> schoice1 >> schoice2))
 		{
+			std::cin.clear();
+			std::cin.ignore();
+		}
 
-			while (!(std::cin >> schoice1 >> schoice2))
-			{
-				std::cin.clear();
-				std::cin.ignore();
-			}
+		choice1 = strColorToInt(schoice1);
+		choice2 = strColorToInt(schoice2);
 
-		} while (/*exchange(choice1, choice2) < 0*/1);
-
+		if (exchangeCard(choice1, choice2) < 0)
+		{
+			std::cout << "exchange failed\n";
+		}
 
 		return 1;
+
 	}
 	else if (command == "placetile")
 	{
@@ -312,26 +390,45 @@ int Game::actionMenu()
 		do
 		{
 		
-			while (!(std::cin >> choice1>>choice2))
+			while (!(std::cin >>choice1>>choice2>>choice3))
 			{
 				std::cin.clear();
 				std::cin.ignore();
 			}
 
-		} while (placeTile(choice1, choice2) < 0);
+		} while (placeTile(choice1, choice2,choice3) < 0);
 
 		return 0;//end action loop
 	}
+	else
+	{
+		std::cout << "Invalid command\n";
+		return 1;
 
-	std::cout << "Invalid command\n";
+	}
 
-	return 1;
+	
 }
 
-int Game::placeTile(int row, int col)
+int Game::placeTile(int handPos, int row, int col)
 {
+
+	if (handPos >= players_[whoseTurn].handSize() || handPos < 0)
+	{
+		if (DEBUG)
+		{
+			std::cout << "handPos out of range\n";
+		}
+
+		return -1;
+	}
+
+
 	if ( row < 0 || col < 0 ||
-		row >= gameboard_rows || col>= gameboard_cols || !isLocationAvailable(row, col) || !isTileConnected(row, col)
+		row >= gameboard_rows || 
+		col>= gameboard_cols || 
+		!isLocationAvailable(row, col) ||
+		!isTileConnected(row, col)
 		)
 	{
 		if (DEBUG)
@@ -344,22 +441,27 @@ int Game::placeTile(int row, int col)
 	}
 
 	//give player synergy cards & coin if applicable
-	giveSynergy(row,col,players_[whoseTurn].topHand());
-
-	giveFacing(players_[whoseTurn].topHand());
-
-	gameBoard_[row][col] = players_[whoseTurn].topHand();
-
-	players_[whoseTurn].popHand();//remove tile from players hand
-
-	playedTiles++;
-
-	occupied_[row][col] = 1;
-
-	
-	
+	giveSynergy(row,col,players_[whoseTurn].handTile(handPos));
 
 	//give players card color that faces them on placed tile.
+	giveFacing(players_[whoseTurn].topHand());
+
+	//set gameboard to placed tile and remove tile from players hand
+	gameBoard_[row][col] = players_[whoseTurn].handTile(handPos);
+	occupied_[row][col] = 1;
+
+	players_[whoseTurn].removeTile(handPos);
+
+	
+	//increment playedTiles for end game purposes
+	playedTiles++;
+
+	
+
+	
+	
+
+	
 
 	return 0;
 
@@ -641,93 +743,93 @@ int Game::initPointStacks()
 	switch (numPlayers)
 	{
 	case 2:
-		pointStacks_[0].push_back(4);
-		pointStacks_[0].push_back(5);
-		pointStacks_[0].push_back(5);
-		pointStacks_[0].push_back(6);
-		pointStacks_[0].push_back(7);
-		pointStacks_[0].push_back(8);
+		pointStacks_[fourOfAKind].push_back(4);
+		pointStacks_[fourOfAKind].push_back(5);
+		pointStacks_[fourOfAKind].push_back(5);
+		pointStacks_[fourOfAKind].push_back(6);
+		pointStacks_[fourOfAKind].push_back(7);
+		pointStacks_[fourOfAKind].push_back(8);
 
 
-		pointStacks_[1].push_back(5);
-		pointStacks_[1].push_back(5);
-		pointStacks_[1].push_back(6);
-		pointStacks_[1].push_back(7);
-		pointStacks_[1].push_back(8);
-		pointStacks_[1].push_back(9);
+		pointStacks_[threePair].push_back(5);
+		pointStacks_[threePair].push_back(5);
+		pointStacks_[threePair].push_back(6);
+		pointStacks_[threePair].push_back(7);
+		pointStacks_[threePair].push_back(8);
+		pointStacks_[threePair].push_back(9);
 
-		pointStacks_[2].push_back(5);
-		pointStacks_[2].push_back(6);
-		pointStacks_[2].push_back(7);
-		pointStacks_[2].push_back(8);
-		pointStacks_[2].push_back(9);
-		pointStacks_[2].push_back(10);
+		pointStacks_[sevenUnique].push_back(5);
+		pointStacks_[sevenUnique].push_back(6);
+		pointStacks_[sevenUnique].push_back(7);
+		pointStacks_[sevenUnique].push_back(8);
+		pointStacks_[sevenUnique].push_back(9);
+		pointStacks_[sevenUnique].push_back(10);
 		
 		break;
 	case 3:
-		pointStacks_[0].push_back(4);
-		pointStacks_[0].push_back(5);
-		pointStacks_[0].push_back(5);
-		pointStacks_[0].push_back(5);
-		pointStacks_[0].push_back(6);
-		pointStacks_[0].push_back(6);
-		pointStacks_[0].push_back(7);
-		pointStacks_[0].push_back(8);
+		pointStacks_[fourOfAKind].push_back(4);
+		pointStacks_[fourOfAKind].push_back(5);
+		pointStacks_[fourOfAKind].push_back(5);
+		pointStacks_[fourOfAKind].push_back(5);
+		pointStacks_[fourOfAKind].push_back(6);
+		pointStacks_[fourOfAKind].push_back(6);
+		pointStacks_[fourOfAKind].push_back(7);
+		pointStacks_[fourOfAKind].push_back(8);
 
 
-		pointStacks_[1].push_back(5);
-		pointStacks_[1].push_back(5);
-		pointStacks_[1].push_back(6);
-		pointStacks_[1].push_back(6);
-		pointStacks_[1].push_back(7);
-		pointStacks_[1].push_back(7);
-		pointStacks_[1].push_back(8);
-		pointStacks_[1].push_back(9);
+		pointStacks_[threePair].push_back(5);
+		pointStacks_[threePair].push_back(5);
+		pointStacks_[threePair].push_back(6);
+		pointStacks_[threePair].push_back(6);
+		pointStacks_[threePair].push_back(7);
+		pointStacks_[threePair].push_back(7);
+		pointStacks_[threePair].push_back(8);
+		pointStacks_[threePair].push_back(9);
 
 
-		pointStacks_[2].push_back(5);
-		pointStacks_[2].push_back(6);
-		pointStacks_[2].push_back(6);
-		pointStacks_[2].push_back(7);
-		pointStacks_[2].push_back(7);
-		pointStacks_[2].push_back(8);
-		pointStacks_[2].push_back(8);
-		pointStacks_[2].push_back(9);
-		pointStacks_[2].push_back(10);
+		pointStacks_[sevenUnique].push_back(5);
+		pointStacks_[sevenUnique].push_back(6);
+		pointStacks_[sevenUnique].push_back(6);
+		pointStacks_[sevenUnique].push_back(7);
+		pointStacks_[sevenUnique].push_back(7);
+		pointStacks_[sevenUnique].push_back(8);
+		pointStacks_[sevenUnique].push_back(8);
+		pointStacks_[sevenUnique].push_back(9);
+		pointStacks_[sevenUnique].push_back(10);
 
 
 		break;
 	case 4:
-		pointStacks_[0].push_back(4);
-		pointStacks_[0].push_back(5);
-		pointStacks_[0].push_back(5);
-		pointStacks_[0].push_back(5);
-		pointStacks_[0].push_back(6);
-		pointStacks_[0].push_back(6);
-		pointStacks_[0].push_back(7);
-		pointStacks_[0].push_back(7);
-		pointStacks_[0].push_back(8);
+		pointStacks_[fourOfAKind].push_back(4);
+		pointStacks_[fourOfAKind].push_back(5);
+		pointStacks_[fourOfAKind].push_back(5);
+		pointStacks_[fourOfAKind].push_back(5);
+		pointStacks_[fourOfAKind].push_back(6);
+		pointStacks_[fourOfAKind].push_back(6);
+		pointStacks_[fourOfAKind].push_back(7);
+		pointStacks_[fourOfAKind].push_back(7);
+		pointStacks_[fourOfAKind].push_back(8);
 
-		pointStacks_[1].push_back(5);
-		pointStacks_[1].push_back(5);
-		pointStacks_[1].push_back(6);
-		pointStacks_[1].push_back(6);
-		pointStacks_[1].push_back(7);
-		pointStacks_[1].push_back(7);
-		pointStacks_[1].push_back(8);
-		pointStacks_[1].push_back(8);
-		pointStacks_[1].push_back(9);
+		pointStacks_[threePair].push_back(5);
+		pointStacks_[threePair].push_back(5);
+		pointStacks_[threePair].push_back(6);
+		pointStacks_[threePair].push_back(6);
+		pointStacks_[threePair].push_back(7);
+		pointStacks_[threePair].push_back(7);
+		pointStacks_[threePair].push_back(8);
+		pointStacks_[threePair].push_back(8);
+		pointStacks_[threePair].push_back(9);
 
-		pointStacks_[2].push_back(5);
-		pointStacks_[2].push_back(6);
-		pointStacks_[2].push_back(6);
-		pointStacks_[2].push_back(7);
-		pointStacks_[2].push_back(7);
-		pointStacks_[2].push_back(8);
-		pointStacks_[2].push_back(8);
-		pointStacks_[2].push_back(9);
-		pointStacks_[2].push_back(9);
-		pointStacks_[2].push_back(10);
+		pointStacks_[sevenUnique].push_back(5);
+		pointStacks_[sevenUnique].push_back(6);
+		pointStacks_[sevenUnique].push_back(6);
+		pointStacks_[sevenUnique].push_back(7);
+		pointStacks_[sevenUnique].push_back(7);
+		pointStacks_[sevenUnique].push_back(8);
+		pointStacks_[sevenUnique].push_back(8);
+		pointStacks_[sevenUnique].push_back(9);
+		pointStacks_[sevenUnique].push_back(9);
+		pointStacks_[sevenUnique].push_back(10);
 		break;
 	default: break;
 	}
@@ -1042,8 +1144,8 @@ int Game::rng(int low, int high)
 int Game::endTurn()
 {
 	players_[whoseTurn].drawTile(lakeTiles_);
-	std::cout << "lake tiles remaining: " << lakeTiles_.size()<<"\n";
-	std::cout << "played tiles: " << playedTiles << "\n";
+	//std::cout << "lake tiles remaining: " << lakeTiles_.size()<<"\n";
+	//std::cout << "played tiles: " << playedTiles << "\n";
 	if (whoseTurn == numPlayers - 1)//restart back to player 0
 	{
 		whoseTurn = 0;
@@ -1053,7 +1155,7 @@ int Game::endTurn()
 		whoseTurn++;
 	}
 	
-	std::cout << "player " << whoseTurn << "'s turn.\n";
+	//std::cout << "player " << whoseTurn << "'s turn.\n";
 	return 0;
 
 }
@@ -1075,7 +1177,7 @@ int Game::showHandTiles()
 	for (int i = 0; i < j; i++)
 	{
 		SetConsoleTextAttribute(hConsole,
-			getColorText(players_[whoseTurn].handPos(i).getTileColors()[TOP]));
+			getColorText(players_[whoseTurn].handTile(i).getTileColors()[TOP]));
 		std::cout << "  #  ";
 		SetConsoleTextAttribute(hConsole, getColorText(-1));
 	}
@@ -1084,10 +1186,10 @@ int Game::showHandTiles()
 	for (int i = 0; i < j; i++)
 	{
 		SetConsoleTextAttribute(hConsole,
-			getColorText(players_[whoseTurn].handPos(i).getTileColors()[LEFT]));
+			getColorText(players_[whoseTurn].handTile(i).getTileColors()[LEFT]));
 		std::cout << " #";
 		SetConsoleTextAttribute(hConsole, getColorText(-1));
-		if (players_[whoseTurn].handPos(i).hasAnimalToken())
+		if (players_[whoseTurn].handTile(i).hasAnimalToken())
 		{
 			std::cout << "*";
 		}
@@ -1096,7 +1198,7 @@ int Game::showHandTiles()
 			std::cout << " ";
 		}
 		SetConsoleTextAttribute(hConsole,
-			getColorText(players_[whoseTurn].handPos(i).getTileColors()[RIGHT]));
+			getColorText(players_[whoseTurn].handTile(i).getTileColors()[RIGHT]));
 			std::cout << "# ";
 			SetConsoleTextAttribute(hConsole, getColorText(-1));
 	}
@@ -1106,7 +1208,7 @@ int Game::showHandTiles()
 	for (int i = 0; i < j; i++)
 	{
 		SetConsoleTextAttribute(hConsole,
-			getColorText(players_[whoseTurn].handPos(i).getTileColors()[BOT]));
+			getColorText(players_[whoseTurn].handTile(i).getTileColors()[BOT]));
 		std::cout << "  #  ";
 		SetConsoleTextAttribute(hConsole, getColorText(-1));
 
@@ -1116,3 +1218,42 @@ int Game::showHandTiles()
 
 	return 0;
 }
+
+int Game::exchangeCard(int remColor, int getColor)
+{
+	if (players_[whoseTurn].getColorHand()[remColor] > 0 && 
+		players_[whoseTurn].getCoins() >= 2 &&
+		colorDeck_[getColor] > 0)
+	{
+		colorDeck_[remColor]++;
+
+		players_[whoseTurn].drawColorCard(getColor,colorDeck_);
+		players_[whoseTurn].decColorHand(remColor);
+
+		players_[whoseTurn].decCoins();
+	}
+	else
+	{
+		return -1;
+	}
+
+}
+
+int Game::getWinner()
+{
+	int maxPoints = -1;
+	int winner;
+
+	for (int i = 0; i < numPlayers; i++)
+	{
+		if (players_[i].getPoints() > maxPoints)
+		{
+			maxPoints = players_[i].getPoints();
+			winner = i;
+		}
+	}
+
+	return winner;
+
+}
+
