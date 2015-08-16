@@ -39,13 +39,18 @@ struct Game
 
 	int facingStartRED(LakeTile tile);
 
-
+	int calculateSynergy(int row, int col, LakeTile tile);
 	int giveSynergy(int row,int col, LakeTile tile);
 	int giveFacing(LakeTile tile);
 
-	int buy(int stack);
+	int buy(int stack,int color1,int color2,int color3);
 	int exchangeCard(int remColor, int getColor);
 	int getWinner();
+
+	int AI_buy();
+	int AI_exchange();
+	int AI_placetile();
+
 
 	int showHandTiles();
 	int showHandCards();

@@ -23,6 +23,9 @@ Game::Game(int players)
 	numPlayers = players;
 	//initialize game
 	//shuffle game tiles/ deal 3 game tiles to each player
+
+	
+
 	initGame();
 	
 	//get player name and orientation
@@ -104,6 +107,7 @@ void Game::eventLoop()
 	{
 
 		drawGame();
+		showHandTiles();
 		showHandCards();
 		players_[whoseTurn].takeTurn(*this);
 	
@@ -148,25 +152,21 @@ int Game::strColorToInt(std::string s)
 	}
 }
 
-int Game::buy(int stack)
+int Game::buy(int stack,int color1,int color2,int color3)
 {
-	int color1,color2,color3;
-	std::string strColor1;
-	std::string strColor2;
-	std::string strColor3;
 
 	switch (stack)
 	{
 	case fourOfAKind:
 		//4 of a kind
-		std::cout << "Which color are you buying with?\n";
-		std::cin >> strColor1;
-
-		color1 = strColorToInt(strColor1);
 
 		if (players_[whoseTurn].getColorHand()[color1] < 4)
 		{
-			std::cout << "Invalid Buy: Don't have 4 of that color.\n";
+			if (DEBUG)
+			{
+				std::cout << "Invalid Buy: Don't have 4 of that color.\n";
+			}
+			
 			return -1;
 		}
 
@@ -182,22 +182,20 @@ int Game::buy(int stack)
 		
 
 		return 0;
-
 		break;
+
 	case threePair:
 		//2 of 3 color
-		std::cout << "Which colors are you buying with?\n";
-		std::cin >> strColor1>>strColor2>>strColor3;
-
-		color1 = strColorToInt(strColor1);
-		color2 = strColorToInt(strColor2);
-		color3 = strColorToInt(strColor3);
-
+	
 		if (players_[whoseTurn].getColorHand()[color1] < 2 || 
 			players_[whoseTurn].getColorHand()[color2] < 2 ||
 			players_[whoseTurn].getColorHand()[color3] < 2)
 		{
-			std::cout << "Invalid Buy: Don't have 2 of one or more color.\n";
+			if (DEBUG)
+			{
+				std::cout << "Invalid Buy: Don't have 2 of one or more color.\n";
+			}
+			
 			return -1;
 		}
 
@@ -220,15 +218,19 @@ int Game::buy(int stack)
 		players_[whoseTurn].incPoints(pointStacks_[threePair].back());
 		pointStacks_[threePair].pop_back();
 		return 0;
-
 		break;
+
 	case sevenUnique:
 		//1 of each color
 		for (int i = 0; i < 7; i++)
 		{
 			if (players_[whoseTurn].getColorHand()[i] < 1)
 			{
-				std::cout << "Invalid Buy: Don't have one of each color.\n";
+				if (DEBUG)
+				{
+					std::cout << "Invalid Buy: Don't have one of each color.\n";
+				}
+				
 				return -1;
 			}
 		}
@@ -248,7 +250,8 @@ int Game::buy(int stack)
 			return 0;
 			break;
 
-		default:break;
+		default:
+			break;
 		}
 	
 
@@ -286,8 +289,9 @@ int Game::strStackToInt(std::string stack)
 int Game::actionMenu()
 {
 	std::string command;
-	int choice1, choice2,choice3;
-	std::string schoice1, schoice2;
+	int choice1, choice2,choice3,choice4;
+	std::string schoice1, schoice2,schoice3,schoice4; 
+
 
 	std::cout << "Give command\n";
 	std::cin >> command;
@@ -304,12 +308,48 @@ int Game::actionMenu()
 			}
 
 			choice1 = strStackToInt(schoice1);
+			choice2 = choice3 = choice4 = -1;
 
-			buy(choice1);
+			switch (choice1)
+			{
+			case fourOfAKind:
+
+				while (!(std::cin >> schoice2))
+				{
+					std::cin.clear();
+					std::cin.ignore();
+				}
+
+				choice2 = strColorToInt(schoice2);
+
+				buy(choice1, choice2, choice3, choice4);
+				return 1;
+				break;
+
+			case threePair:
+
+				while (!(std::cin >> schoice2 >> schoice3 >> schoice4))
+				{
+					std::cin.clear();
+					std::cin.ignore();
+				}
+
+				choice2 = strColorToInt(schoice2);
+				choice3 = strColorToInt(schoice3);
+				choice4 = strColorToInt(schoice4);
+
+
+				buy(choice1, choice2, choice3, choice4);
+				return 1;
+				break;
+
+			case sevenUnique:
+				buy(choice1, choice2, choice3, choice4);
+				return 1;
+				break;
+			}
 
 		return 1;
-
-
 
 	}
 	else if (command == "rotate")
@@ -488,6 +528,55 @@ int Game::giveFacing(LakeTile tile)
 	return 0;
 
 }
+
+int Game::calculateSynergy(int row, int col, LakeTile tile)
+{
+	int synCount = 0;
+
+	//top
+	if (row - 1 > 0)
+	{
+		if (tile.getTileColors()[TOP] == gameBoard_[row - 1][col].getTileColors()[BOT]
+			&& occupied_[row - 1][col])
+		{
+			synCount++;
+		}
+	}
+
+	//right
+
+	if (col + 1 < gameboard_cols)
+	{
+		if (tile.getTileColors()[RIGHT] == gameBoard_[row][col + 1].getTileColors()[LEFT]
+			&& occupied_[row][col + 1])
+		{
+			synCount++;
+		}
+	}
+
+	//bot
+	if (row + 1 < gameboard_rows)
+	{
+		if (tile.getTileColors()[BOT] == gameBoard_[row + 1][col].getTileColors()[TOP]
+			&& occupied_[row + 1][col])
+		{
+			synCount++;
+		}
+
+	}
+
+	//left
+	if (col - 1 > 0)
+	{
+		if (tile.getTileColors()[LEFT] == gameBoard_[row][col - 1].getTileColors()[RIGHT]
+			&& occupied_[row][col - 1])
+		{
+			synCount++;
+		}
+	}
+	return synCount;
+}
+
 
 int Game::giveSynergy(int row,int col,LakeTile tile)
 {
@@ -741,12 +830,19 @@ int Game::initPointStacks()
 	{
 	case 2:
 		pointStacks_[fourOfAKind].push_back(4);
+		pointStacks_[fourOfAKind].push_back(4);
+		pointStacks_[fourOfAKind].push_back(4);
+
+		pointStacks_[fourOfAKind].push_back(4);
 		pointStacks_[fourOfAKind].push_back(5);
 		pointStacks_[fourOfAKind].push_back(5);
 		pointStacks_[fourOfAKind].push_back(6);
 		pointStacks_[fourOfAKind].push_back(7);
 		pointStacks_[fourOfAKind].push_back(8);
 
+		pointStacks_[threePair].push_back(4);
+		pointStacks_[threePair].push_back(4);
+		pointStacks_[threePair].push_back(4);
 
 		pointStacks_[threePair].push_back(5);
 		pointStacks_[threePair].push_back(5);
@@ -754,6 +850,10 @@ int Game::initPointStacks()
 		pointStacks_[threePair].push_back(7);
 		pointStacks_[threePair].push_back(8);
 		pointStacks_[threePair].push_back(9);
+
+		pointStacks_[sevenUnique].push_back(4);
+		pointStacks_[sevenUnique].push_back(4);
+		pointStacks_[sevenUnique].push_back(4);
 
 		pointStacks_[sevenUnique].push_back(5);
 		pointStacks_[sevenUnique].push_back(6);
@@ -764,6 +864,11 @@ int Game::initPointStacks()
 		
 		break;
 	case 3:
+
+		pointStacks_[fourOfAKind].push_back(4);
+		pointStacks_[fourOfAKind].push_back(4);
+		pointStacks_[fourOfAKind].push_back(4);
+
 		pointStacks_[fourOfAKind].push_back(4);
 		pointStacks_[fourOfAKind].push_back(5);
 		pointStacks_[fourOfAKind].push_back(5);
@@ -773,6 +878,9 @@ int Game::initPointStacks()
 		pointStacks_[fourOfAKind].push_back(7);
 		pointStacks_[fourOfAKind].push_back(8);
 
+		pointStacks_[threePair].push_back(4);
+		pointStacks_[threePair].push_back(4);
+		pointStacks_[threePair].push_back(4);
 
 		pointStacks_[threePair].push_back(5);
 		pointStacks_[threePair].push_back(5);
@@ -783,6 +891,9 @@ int Game::initPointStacks()
 		pointStacks_[threePair].push_back(8);
 		pointStacks_[threePair].push_back(9);
 
+		pointStacks_[sevenUnique].push_back(4);
+		pointStacks_[sevenUnique].push_back(4);
+		pointStacks_[sevenUnique].push_back(4);
 
 		pointStacks_[sevenUnique].push_back(5);
 		pointStacks_[sevenUnique].push_back(6);
@@ -797,6 +908,11 @@ int Game::initPointStacks()
 
 		break;
 	case 4:
+
+		pointStacks_[fourOfAKind].push_back(4);
+		pointStacks_[fourOfAKind].push_back(4);
+		pointStacks_[fourOfAKind].push_back(4);
+
 		pointStacks_[fourOfAKind].push_back(4);
 		pointStacks_[fourOfAKind].push_back(5);
 		pointStacks_[fourOfAKind].push_back(5);
@@ -807,6 +923,11 @@ int Game::initPointStacks()
 		pointStacks_[fourOfAKind].push_back(7);
 		pointStacks_[fourOfAKind].push_back(8);
 
+		pointStacks_[threePair].push_back(4);
+		pointStacks_[threePair].push_back(4);
+		pointStacks_[threePair].push_back(4);
+
+
 		pointStacks_[threePair].push_back(5);
 		pointStacks_[threePair].push_back(5);
 		pointStacks_[threePair].push_back(6);
@@ -816,6 +937,10 @@ int Game::initPointStacks()
 		pointStacks_[threePair].push_back(8);
 		pointStacks_[threePair].push_back(8);
 		pointStacks_[threePair].push_back(9);
+
+		pointStacks_[sevenUnique].push_back(4);
+		pointStacks_[sevenUnique].push_back(4);
+		pointStacks_[sevenUnique].push_back(4);
 
 		pointStacks_[sevenUnique].push_back(5);
 		pointStacks_[sevenUnique].push_back(6);
@@ -1101,10 +1226,9 @@ int Game::getColorText(int color)
 int Game::shuffleTiles()
 {
 	int r;
-	std::srand(1);
 	LakeTile temp;
 	LakeTile temp2;
-
+	std::srand(2);
 	for (int i = 0; i < lakeTiles_.size(); i++)
 	{
 		r = rng(0, lakeTiles_.size()- 1);
@@ -1251,6 +1375,195 @@ int Game::getWinner()
 	}
 
 	return winner;
+
+}
+
+
+int Game::AI_buy()
+{
+	bool pointStackAvailable[3] = { false, false, false };
+
+	int color_fourOfAKind[3] = { -1, -1, -1 };
+	int color_threePair[3] = { -1, -1, -1 };
+	int threePairCount = 0;
+	int sevenUniqueCount = 0;
+	int maxPointStack,maxPoints;
+	int j = 0;
+	
+
+	/*asses buy options*/
+	for (int i = BLACK; i <= ORANGE ; i++)
+	{
+		if (players_[whoseTurn].getColorHand()[i] >= 4)
+		{
+			color_fourOfAKind[0] = i;
+			pointStackAvailable[fourOfAKind] = true;
+	
+		}
+
+		if (players_[whoseTurn].getColorHand()[i] >= 2)
+		{
+	
+			
+			if (j <= 2)
+			{
+				color_threePair[j] = i;
+				j++;
+			} 
+			
+
+
+			threePairCount++;
+			
+		}
+
+	    if (players_[whoseTurn].getColorHand()[i] >= 1)
+		{
+			sevenUniqueCount++;
+		}
+	}
+	if (sevenUniqueCount == 7)
+	{
+		pointStackAvailable[sevenUnique] = true;
+	}
+	if (threePairCount >= 3)
+	{
+		pointStackAvailable[threePair] = true;
+	}
+
+	/*buy the highest available point card at current state*/
+	maxPoints = 0;
+	maxPointStack = -1;
+	for (int i = 0; i < 3; i++)
+	{
+		if (pointStacks_[i].back() > maxPoints && pointStackAvailable[i])
+		{
+			maxPointStack = i;
+		}
+	}
+	
+	if (maxPointStack == -1)
+	{
+		if (DEBUG)
+		{
+			std::cout << "Can't buy\n";
+		}
+		return -1;
+	}
+	else
+	{
+		switch (maxPointStack)
+		{
+		case fourOfAKind:
+			buy(maxPointStack, color_fourOfAKind[0],color_fourOfAKind[1],color_fourOfAKind[2]);
+			break;
+		case threePair:
+			buy(maxPointStack, color_threePair[0], color_threePair[1], color_threePair[2]);
+			break;
+		default:
+			buy(maxPointStack, -1,-1,-1);
+		}
+		
+	}
+
+	return 0;
+
+}
+int Game::AI_exchange()
+{
+
+	int remColor = -1;
+
+	for (int i = BLACK; i <= ORANGE; i++)
+	{
+		if (players_[whoseTurn].getColorHand()[i] == 1)
+		{
+			remColor = i;
+		}
+	}
+	if (remColor != -1)
+	{
+		exchangeCard(remColor, rng(BLACK, ORANGE));
+		return 0;
+
+	}
+	else
+	{
+		return -1;
+	}
+	
+	
+}
+int Game::AI_placetile()
+{
+	int choice1, choice2, choice3;
+	int synCount, maxSyn, handPos,row,col,rotationCounter,rotationSave;
+	row = col = handPos = synCount = 0;
+	
+	/*get maximum possible synergy for each available
+	spot on the gameboard*/
+
+	maxSyn = 0;
+	rotationSave = 0;
+
+	for (int i = 0; i < gameboard_rows; i++)
+	{
+		for (int j = 0; j < gameboard_cols; j++)
+		{
+			if (isLocationAvailable(i,j) &&  isTileConnected(i,j))
+			{
+				/*found unoccupied connected tile*/
+				
+				/*try each tile and calculate synergies*/
+				for (int k = 0; k < players_[whoseTurn].handSize(); k++)
+				{
+
+					/*check each rotation of the tile*/
+				
+					for (int r = 1; r <= 4; r++)
+					{
+						players_[whoseTurn].rotateTile(k, 1);
+
+						synCount = calculateSynergy(i, j, players_[whoseTurn].handTile(k));
+
+						if (synCount > maxSyn || (synCount >= maxSyn &&  players_[whoseTurn].handTile(k).hasAnimalToken() ) )
+						{
+							maxSyn = synCount;
+							handPos = k;
+							row = i;
+							col = j;
+							rotationSave = r;
+							
+						}
+
+					}
+				
+
+				}
+
+			}
+		}
+	}
+
+
+	players_[whoseTurn].rotateTile(handPos, rotationSave);
+	std::cout << "rotated tile " << handPos << " by " << rotationSave<<"\n";
+	placeTile(handPos, row, col);
+
+
+	/*
+	choice1 = rand() % players_[whoseTurn].handSize();
+
+	do
+	{
+		choice2 = rand() % gameboard_rows;
+		choice3 = rand() % gameboard_cols;
+
+	} while (placeTile(choice1, choice2, choice3) < 0);
+	
+	*/
+	
+	return 0;
 
 }
 

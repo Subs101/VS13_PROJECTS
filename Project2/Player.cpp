@@ -224,8 +224,15 @@ int Player::takeTurn(Game& game)
 	{
 		/*PLAYER AI*/
 		//if 2 coins make exchange to yield buy
+		if (getCoins() >= 2)
+		{
+			game.AI_exchange();
+		}
 		//if buy criteria met do that..
+		game.AI_buy();
 		//placetile with most synergies
+		game.AI_placetile();
+
 		game.endTurn();
 		return 0;
 	}
